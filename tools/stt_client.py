@@ -3,6 +3,7 @@ Speech-to-text client supporting multiple providers (OpenAI Whisper, etc.).
 """
 
 import os
+import sys
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -155,19 +156,23 @@ class FasterWhisperSTTProvider(BaseSTTProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.model_size = os.getenv('FASTER_WHISPER_SIZE', self.DEFAULT_SIZE)
         self.device = os.getenv('FASTER_WHISPER_DEVICE', self.DEFAULT_DEVICE)
+        self.cpu_threads = int(os.getenv('FASTER_WHISPER_THREADS', '0'))
 
         try:
             from faster_whisper import WhisperModel
             self.whisper_model = WhisperModel(
                 self.model_size,
                 device=self.device,
-                compute_type="int8"
+                compute_type="int8",
+                cpu_threads=self.cpu_threads or os.cpu_count(),
+                num_workers=1
             )
         except ImportError:
             raise FatalError("faster-whisper package not installed")
 
         logger.info(
-            f"Initialized Faster Whisper: size={self.model_size}, device={self.device}"
+            f"Initialized Faster Whisper: size={self.model_size}, "
+            f"device={self.device}, threads={self.cpu_threads or os.cpu_count()}"
         )
 
     def estimate_cost(self, audio_duration_seconds: float) -> float:
@@ -191,10 +196,21 @@ class FasterWhisperSTTProvider(BaseSTTProvider):
             segments, info = self.whisper_model.transcribe(
                 str(path),
                 beam_size=5,
-                language=language
+                language=language,
+                vad_filter=True,
+                vad_parameters=dict(
+                    min_silence_duration_ms=500,
+                    speech_pad_ms=200
+                )
             )
 
-            transcript = " ".join(segment.text.strip() for segment in segments)
+            parts = []
+            for segment in segments:
+                text = segment.text.strip()
+                parts.append(text)
+                print(f"  [{segment.start:.1f}s -> {segment.end:.1f}s] {text}", flush=True)
+
+            transcript = " ".join(parts)
             duration = info.duration
 
             logger.info(

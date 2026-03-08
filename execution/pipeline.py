@@ -246,17 +246,25 @@ Examples:
     # Load environment
     load_dotenv()
 
-    # Validate environment
-    if not os.getenv('OPENAI_API_KEY'):
-        print("Error: OPENAI_API_KEY not set in .env file")
+    # Validate environment based on configured models
+    ai_model = os.getenv('AI_MODEL', 'gpt-4o').lower()
+    transcript_model = os.getenv('TRANSCRIPT_MODEL', 'whisper-1').lower()
+
+    if ai_model.startswith('claude') and not os.getenv('ANTHROPIC_API_KEY'):
+        print("Error: ANTHROPIC_API_KEY not set (required for Claude models)")
+        sys.exit(1)
+    elif ai_model.startswith(('gpt-', 'o1-', 'o3-', 'chatgpt')) and not os.getenv('OPENAI_API_KEY'):
+        print("Error: OPENAI_API_KEY not set (required for OpenAI models)")
+        sys.exit(1)
+    elif ai_model.startswith('gemini') and not os.getenv('GOOGLE_API_KEY'):
+        print("Error: GOOGLE_API_KEY not set (required for Gemini models)")
+        sys.exit(1)
+    elif ai_model.startswith('openrouter/') and not os.getenv('OPENROUTER_API_KEY'):
+        print("Error: OPENROUTER_API_KEY not set (required for OpenRouter models)")
         sys.exit(1)
 
-    provider = os.getenv('AI_PROVIDER', 'claude')
-    if provider == 'claude' and not os.getenv('ANTHROPIC_API_KEY'):
-        print("Error: ANTHROPIC_API_KEY not set (required for Claude provider)")
-        sys.exit(1)
-    elif provider == 'gemini' and not os.getenv('GOOGLE_API_KEY'):
-        print("Error: GOOGLE_API_KEY not set (required for Gemini provider)")
+    if transcript_model.startswith('whisper') and not os.getenv('OPENAI_API_KEY'):
+        print("Error: OPENAI_API_KEY not set (required for Whisper STT)")
         sys.exit(1)
 
     # Get URLs
@@ -277,7 +285,8 @@ Examples:
         sys.exit(1)
 
     print(f"\nGDG Newsletter Automation")
-    print(f"Provider: {provider}")
+    print(f"AI Model: {os.getenv('AI_MODEL', 'gpt-4o')}")
+    print(f"STT Model: {transcript_model}")
     print(f"Videos: {len(args.urls)}")
     print()
 
