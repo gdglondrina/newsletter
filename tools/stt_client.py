@@ -146,10 +146,80 @@ class OpenAISTTProvider(BaseSTTProvider):
             raise TransientError(f"OpenAI STT error: {e}")
 
 
+class FasterWhisperSTTProvider(BaseSTTProvider):
+    """Local Faster Whisper provider (runs on CPU or GPU, no API cost)."""
+
+    DEFAULT_SIZE = "medium"
+    DEFAULT_DEVICE = "cpu"
+
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.model_size = os.getenv('FASTER_WHISPER_SIZE', self.DEFAULT_SIZE)
+        self.device = os.getenv('FASTER_WHISPER_DEVICE', self.DEFAULT_DEVICE)
+
+        try:
+            from faster_whisper import WhisperModel
+            self.whisper_model = WhisperModel(
+                self.model_size,
+                device=self.device,
+                compute_type="int8"
+            )
+        except ImportError:
+            raise FatalError("faster-whisper package not installed")
+
+        logger.info(
+            f"Initialized Faster Whisper: size={self.model_size}, device={self.device}"
+        )
+
+    def estimate_cost(self, audio_duration_seconds: float) -> float:
+        return 0.0
+
+    def transcribe(
+        self,
+        audio_path: str,
+        language: str = 'pt',
+        response_format: str = 'text'
+    ) -> TranscriptionResult:
+        path = Path(audio_path)
+        if not path.exists():
+            raise FatalError(f"Audio file not found: {audio_path}")
+
+        video_id = self._extract_video_id(path)
+
+        logger.info(f"Transcribing with Faster Whisper: {audio_path}")
+
+        try:
+            segments, info = self.whisper_model.transcribe(
+                str(path),
+                beam_size=5,
+                language=language
+            )
+
+            transcript = " ".join(segment.text.strip() for segment in segments)
+            duration = info.duration
+
+            logger.info(
+                f"Transcription complete. "
+                f"Language: {info.language} (prob={info.language_probability:.2f}), "
+                f"duration: {duration:.1f}s"
+            )
+
+            return TranscriptionResult(
+                video_id=video_id,
+                transcript=transcript,
+                language=info.language,
+                duration=duration,
+                cost=0.0
+            )
+
+        except Exception as e:
+            raise FatalError(f"Faster Whisper transcription failed: {e}")
+
+
 class STTClient:
     """Speech-to-text client supporting multiple providers."""
 
     _IMPLEMENTATIONS = {
+        'faster-whisper': FasterWhisperSTTProvider,
         'whisper': OpenAISTTProvider,
     }
 
