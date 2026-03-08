@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from tools.whisper_client import WhisperClient
+from tools.stt_client import STTClient
 from tools.file_utils import read_json, write_json, write_file, ensure_directory
 from tools.error_handler import FatalError
 
@@ -34,7 +34,7 @@ def transcribe_audio(state: Dict[str, Any]) -> Dict[str, Any]:
         Updated state with transcription results
     """
     ensure_directory(TEMP_TRANSCRIPTS_DIR)
-    client = WhisperClient()
+    client = STTClient()
 
     total_cost = state.get('total_cost', 0.0)
 
