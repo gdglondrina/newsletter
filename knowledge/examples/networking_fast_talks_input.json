@@ -1,0 +1,34 @@
+{
+  "newsletter_type": "networking_fast_talks",
+  "event": {
+    "titulo": "GDG Londrina Meetup: Networking Edition + Fast Talks",
+    "data": "29 de julho, 2025 (terca-feira)",
+    "horario": "A partir das 19h",
+    "local_nome": "Bodega S/A",
+    "local_endereco": "Av. Faria Lima, 1399",
+    "local_link_mapa": "https://maps.app.goo.gl/5nt4N4AKM8dNBsZ18",
+    "link_inscricao": "https://www.sympla.com.br/evento/gdg-londrina-meetup-julho-networking-edition-fast-talks/3044081",
+    "mes": "julho"
+  },
+  "evento_anterior": {
+    "mes": "junho",
+    "descricao": "duas palestras lotadas de insights",
+    "palestras": [
+      {
+        "titulo": "Lideranca e Inteligencia Emocional na Era Digital",
+        "palestrante": "Jailana Souza Saraiva",
+        "linkedin": "https://www.linkedin.com/in/jailana-souza/",
+        "link_resumo": "https://gdglondrina.substack.com/p/lideranca-nao-e-sobre-ser-o-mais"
+      },
+      {
+        "titulo": "Computacao Grafica e Seus Truques",
+        "palestrante": "Mateus Mercer",
+        "linkedin": "https://www.linkedin.com/in/matmercer/"
+      }
+    ]
+  },
+  "contexto": {
+    "spoiler_local": "E um spoiler: vamos nos reunir em um lugar que a comunidade do GDG ja conhece muito bem por causa das tradicionais feijoadas pos-evento de sabado!",
+    "beneficios_adicionais": "Boa comida, um chopp gelado e a comunidade reunida no Bodega"
+  }
+}

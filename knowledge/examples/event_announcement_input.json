@@ -1,0 +1,33 @@
+{
+  "newsletter_type": "event_announcement",
+  "event": {
+    "titulo": "GDG Londrina Meetup Junho 2025",
+    "data": "26 de junho (quinta-feira)",
+    "horario": "A partir das 19h",
+    "local": "Teatro Unifil",
+    "endereco": "",
+    "link_inscricao": "https://www.sympla.com.br/evento/gdg-londrina-meetup-junho-2025/2994093"
+  },
+  "palestrantes": [
+    {
+      "nome": "Jailana Souza Saraiva",
+      "linkedin": "https://www.linkedin.com/in/jailana-souza/",
+      "titulo_palestra": "Lideranca e Inteligencia Emocional na Era Digital",
+      "descricao_palestra": "Jailana vai apresentar como a inteligencia emocional e essencial para liderar na era da IA, mostrando estrategias para gestao de projetos que unem tecnologia e humanizacao para resultados de impacto.",
+      "bio": "Educadora, gestora de projetos, escritora e artista multidisciplinar. Mestre em Educacao, especialista em Gestao Publica e em Inovacao, com formacoes complementares nas areas de inteligencia artificial, politicas publicas e desenvolvimento humano. Atua na Fundacao Getulio Vargas (FGV) com formacao executiva e desenvolvimento de competencias para lideres publicos.",
+      "foto_url": ""
+    },
+    {
+      "nome": "Matheus Mercer",
+      "linkedin": "https://www.linkedin.com/in/matmercer/",
+      "titulo_palestra": "Computacao Grafica e Seus Truques",
+      "descricao_palestra": "Aprenda sobre as tecnicas comuns da computacao grafica usadas em jogos, filmes e dispositivos moveis, alem de revelar a conexao entre teoria visual e o funcionamento das placas de video.",
+      "bio": "Desenvolvedor Backend Senior na Lumenalta, e membro ativo da comunidade GDG Londrina. E um desenvolvedor que aprimora suas habilidades a cada dia. Com experiencia vasta em tecnologia, abrangendo desde o desenvolvimento web de baixo nivel ate o backend.",
+      "foto_url": ""
+    }
+  ],
+  "contexto": {
+    "tema_geral": "Lideranca na era da IA e os truques que fazem o mundo digital ganhar vida",
+    "informacao_extra": "Alem do conteudo incrivel, teremos um espaco para networking, troca de ideias e aquele coffee especial para deixar o dia ainda melhor. Reserve um tempinho depois das palestras para sair para comer, conversar e se conectar com a comunidade!"
+  }
+}

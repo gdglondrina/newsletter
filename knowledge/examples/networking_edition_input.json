@@ -1,0 +1,38 @@
+{
+  "newsletter_type": "networking_edition",
+  "event": {
+    "titulo": "GDG Londrina Meetup: Networking Edition",
+    "data": "16 de abril, 2025 (quarta-feira)",
+    "horario": "A partir das 19h",
+    "local_nome": "Jamo Bar",
+    "local_endereco": "Av. Waldemar Spranger, 1173",
+    "local_link_mapa": "https://www.instagram.com/jamo.bar",
+    "link_inscricao": "https://www.sympla.com.br/evento/gdg-londrina-meetup-abril-2025-networking-edition/2902471"
+  },
+  "atividades_extras": [
+    "Videogames liberados para fazer aquele x1 de respeito (ou nao)",
+    "Troca de experiencias com pessoas em diferentes momentos de carreira"
+  ],
+  "evento_anterior": {
+    "titulo": "GDG Londrina + DevPR na Estrada",
+    "descricao": "Auditorio lotado e duas palestras incriveis",
+    "palestras": [
+      {
+        "palestrante": "Luiz Schons",
+        "linkedin": "https://www.linkedin.com/in/luiz-schons/",
+        "titulo": "CORS funciona no Postman mas nao no navegador",
+        "link_resumo": "https://gdglondrina.substack.com/p/do-erro-ao-acerto-cors"
+      },
+      {
+        "palestrante": "Enrico Secco",
+        "linkedin": "https://www.linkedin.com/in/enrico-secco/",
+        "titulo": "Frontend cache com React Query e Next.js",
+        "link_resumo": "https://open.substack.com/pub/gdglondrina/p/react-query-e-nextjs-o-poder-do-cache"
+      }
+    ]
+  },
+  "contexto": {
+    "edicao": "primeira edicao 2025 focada 100% em networking",
+    "spoiler": "Spoiler: vai ter videogame liberado..."
+  }
+}
