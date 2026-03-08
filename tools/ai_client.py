@@ -155,11 +155,17 @@ class OpenAIProvider(BaseProvider):
                 messages.append({"role": "system", "content": system})
             messages.append({"role": "user", "content": prompt})
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=max_tokens
-            )
+            request = {
+                "model": self.model,
+                "messages": messages,
+            }
+            # gpt-5 models require max_completion_tokens instead of max_tokens.
+            if self.model.lower().startswith("gpt-5"):
+                request["max_completion_tokens"] = max_tokens
+            else:
+                request["max_tokens"] = max_tokens
+
+            response = self.client.chat.completions.create(**request)
 
             text = response.choices[0].message.content
             input_tokens = response.usage.prompt_tokens
