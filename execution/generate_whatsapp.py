@@ -150,8 +150,7 @@ def generate_message(
 
         result = client.generate(
             prompt=user_prompt,
-            system=system_prompt,
-            max_tokens=2000
+            system=system_prompt
         )
 
         # Determine output filename
