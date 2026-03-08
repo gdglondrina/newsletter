@@ -188,7 +188,7 @@ def run_pipeline(video_urls: List[str], force_restart: bool = False) -> Dict[str
         # Step 4: Newsletter Generation
         if state['current_step'] == 'newsletter':
             logger.info("Step 4/4: Generating newsletter...")
-            state = generate_newsletter.generate_newsletter(state)
+            state = generate_newsletter.generate_talk_summary_newsletter(state)
             save_state(state)
 
         # Finalize
