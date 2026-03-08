@@ -1,267 +1,259 @@
 # GDG Newsletter Automation
 
-Automate the generation of monthly GDG (Google Developer Group) newsletters from YouTube talk recordings.
+Automates GDG Londrina content generation from YouTube talks and event metadata.
 
 ## Overview
 
-This pipeline processes YouTube videos of GDG talks and generates a formatted newsletter in markdown:
+The main pipeline processes YouTube videos and builds a talk-summary newsletter:
 
+```text
+YouTube Videos -> Audio -> Transcript -> Summaries -> Newsletter
 ```
-YouTube Videos → Audio → Transcript → Summaries → Newsletter
-```
 
-**Features:**
-- Downloads audio from YouTube using yt-dlp
-- Transcribes Portuguese audio using OpenAI Whisper API
-- Generates summaries using configurable AI (Claude, OpenAI, or Gemini)
-- Produces formatted newsletter in markdown
-- Resume-from-failure support with state checkpointing
-- Cost tracking for all API calls
+The project also supports standalone generation for:
+- Event announcement newsletters
+- Networking editions
+- Networking + Fast Talks editions
+- WhatsApp promotional messages
 
-## Quick Start
+## Features
 
-```bash
-# 1. Clone and setup
-cd gdg
-cp .env.example .env
-# Edit .env with your API keys
-
-# 2. Install dependencies
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-brew install yt-dlp  # if not installed
-
-# 3. Run
-./execution/orchestrator.sh \
-  "https://www.youtube.com/watch?v=VIDEO1" \
-  "https://www.youtube.com/watch?v=VIDEO2"
-
-# Output: output/YYYY-MM-newsletter.md
-```
+- Audio download with `yt-dlp`
+- Portuguese transcription via OpenAI Whisper API
+- AI-based summary/newsletter generation (OpenAI, Claude, Gemini models)
+- Checkpoint-based resume with `context/current_processing.json`
+- Cost tracking per step and per session
+- Standalone newsletter and WhatsApp generation modes
 
 ## Requirements
 
 - Python 3.9+
 - macOS or Linux
-- yt-dlp (`brew install yt-dlp`)
-- API keys for:
-  - OpenAI (required for Whisper transcription)
-  - One of: Anthropic Claude, OpenAI GPT, or Google Gemini
+- `yt-dlp` installed (`brew install yt-dlp`)
+- API keys:
+  - `OPENAI_API_KEY` (required for transcription)
+  - One or more generation providers as needed (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`)
+
+## Quick Start (Full Talk Pipeline)
+
+```bash
+# 1) Setup
+cp .env.example .env
+# Edit .env with your keys
+
+# 2) Dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+brew install yt-dlp
+
+# 3) Run
+./execution/orchestrator.sh \
+  "https://www.youtube.com/watch?v=VIDEO1" \
+  "https://www.youtube.com/watch?v=VIDEO2"
+
+# Output (talk summary): output/YYYY-MM-talk-summary.md
+```
 
 ## Configuration
 
-### Environment Variables
-
-Create a `.env` file from the template:
+Create `.env` from template:
 
 ```bash
 cp .env.example .env
 ```
 
-Required variables:
+Base variables:
 
 ```bash
-# Transcription (required)
+# Required for Whisper transcription
 OPENAI_API_KEY=sk-...
 
-# AI Provider (choose one: 'claude', 'openai', 'gemini')
+# Legacy pipeline provider selector (used by execution/pipeline.py checks)
 AI_PROVIDER=claude
 
-# Provider-specific keys
-ANTHROPIC_API_KEY=sk-ant-...  # For Claude
-# OPENAI_API_KEY (already set above, also used for GPT)
-GOOGLE_API_KEY=...  # For Gemini
+# Provider keys
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=...
 
 # Optional
 LOG_LEVEL=INFO
 ```
 
-### AI Provider Comparison
+Optional per-stage model overrides:
 
-| Provider | Model | Cost (2 talks) | Best For |
-|----------|-------|----------------|----------|
-| Claude | claude-sonnet-4-5 | ~$0.70 | Quality, nuanced writing |
-| OpenAI | gpt-4o | ~$0.55 | Balanced performance |
-| Gemini | gemini-1.5-pro | ~$0.30 | Cost-conscious, free tier |
+```bash
+TRANSCRIPT_MODEL=whisper-1
+SUMMARY_MODEL=gpt-5-mini-2025-08-07
+NEWSLETTER_MODEL=gemini-3-flash-preview
+WHATSAPP_MODEL=gpt-5-mini-2025-08-07
+AI_MODEL=gpt-4o
+```
 
 ## Usage
 
-### Basic Usage
+### Full pipeline
 
 ```bash
-# Activate environment
 source venv/bin/activate
-
-# Run with 2 YouTube URLs
-./execution/orchestrator.sh \
-  "https://www.youtube.com/watch?v=xxx" \
-  "https://www.youtube.com/watch?v=yyy"
+./execution/orchestrator.sh "https://www.youtube.com/watch?v=xxx" "https://www.youtube.com/watch?v=yyy"
 ```
 
-### Resume After Failure
-
-If the pipeline crashes, just run it again - it resumes from the last checkpoint:
+### Resume after failure
 
 ```bash
 ./execution/orchestrator.sh
 ```
 
-### Force Restart
-
-To start fresh, ignoring previous state:
+### Force restart
 
 ```bash
-./execution/orchestrator.sh --force-restart \
-  "https://www.youtube.com/watch?v=xxx" \
-  "https://www.youtube.com/watch?v=yyy"
+./execution/orchestrator.sh --force-restart "https://www.youtube.com/watch?v=xxx" "https://www.youtube.com/watch?v=yyy"
 ```
 
-### Direct Python Execution
+### Direct Python execution
 
 ```bash
 source venv/bin/activate
 python execution/pipeline.py <url1> <url2>
 ```
 
+### Standalone newsletter generation
+
+```bash
+# Talk summary (from current_processing.json)
+python execution/generate_newsletter.py --type talk_summary
+
+# Event announcement
+python execution/generate_newsletter.py \
+  --type event_announcement \
+  --input knowledge/examples/event_announcement_input.json
+
+# Networking edition
+python execution/generate_newsletter.py \
+  --type networking_edition \
+  --input knowledge/examples/networking_edition_input.json
+
+# Networking + Fast Talks
+python execution/generate_newsletter.py \
+  --type networking_fast_talks \
+  --input knowledge/examples/networking_fast_talks_input.json
+```
+
+### WhatsApp message generation
+
+```bash
+# One message type
+python execution/generate_whatsapp.py \
+  --type event_announcement \
+  --input knowledge/examples/event_announcement_input.json
+
+# Batch pre-event messages
+python execution/generate_whatsapp.py \
+  --type all_pre_event \
+  --input knowledge/examples/event_announcement_input.json
+```
+
+Generated WhatsApp files are written to `output/whatsapp/`.
+
 ## Project Structure
 
-```
+```text
 gdg/
-├── AGENTS.md                    # Orchestrator logic and agent definitions
-├── README.md                    # This file
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Environment template
-│
-├── directives/                  # Workflow descriptions (markdown)
-│   ├── newsletter-generation.md
+├── AGENTS.md
+├── README.md
+├── requirements.txt
+├── .env.example
+├── directives/
 │   ├── audio-extraction.md
 │   ├── transcription.md
-│   └── content-generation.md
-│
-├── execution/                   # Executable scripts
-│   ├── orchestrator.sh          # Main entry point
-│   ├── pipeline.py              # Python orchestrator
+│   ├── content-generation.md
+│   ├── newsletter-generation.md
+│   └── whatsapp-message-generation.md
+├── execution/
+│   ├── orchestrator.sh
+│   ├── pipeline.py
 │   ├── extract_audio.py
 │   ├── transcribe_audio.py
 │   ├── generate_summaries.py
-│   └── generate_newsletter.py
-│
-├── tools/                       # Reusable utilities
-│   ├── youtube_downloader.py    # yt-dlp wrapper
-│   ├── whisper_client.py        # Whisper API client
-│   ├── ai_client.py             # Multi-provider AI client
-│   ├── file_utils.py            # File operations
-│   └── error_handler.py         # Retry logic
-│
-├── knowledge/                   # Templates and prompts
+│   ├── generate_newsletter.py
+│   └── generate_whatsapp.py
+├── tools/
+│   ├── youtube_downloader.py
+│   ├── whisper_client.py
+│   ├── ai_client.py
+│   ├── file_utils.py
+│   └── error_handler.py
+├── knowledge/
 │   ├── newsletter_templates/
-│   │   ├── template.md
+│   │   ├── talk_summary_template.md
+│   │   ├── event_announcement_template.md
+│   │   ├── networking_edition_template.md
+│   │   ├── networking_fast_talks_template.md
 │   │   ├── tone_guidelines.md
 │   │   └── structure_requirements.md
-│   └── prompts/
-│       ├── summary_prompt.md
-│       └── newsletter_prompt.md
-│
-├── context/                     # Runtime state (git-ignored)
-│   ├── current_processing.json
-│   └── processing_history.json
-│
-├── temp/                        # Temporary files (git-ignored)
-│   ├── audio/
-│   ├── transcripts/
-│   └── summaries/
-│
-└── output/                      # Generated newsletters (git-ignored)
+│   ├── prompts/
+│   │   ├── summary_prompt.md
+│   │   ├── talk_summary_prompt.md
+│   │   ├── event_announcement_prompt.md
+│   │   ├── networking_edition_prompt.md
+│   │   ├── networking_fast_talks_prompt.md
+│   │   ├── whatsapp_event_announcement_prompt.md
+│   │   ├── whatsapp_speaker_spotlight_prompt.md
+│   │   ├── whatsapp_reminder_prompt.md
+│   │   └── whatsapp_newsletter_promo_prompt.md
+│   └── examples/
+├── context/   (git-ignored runtime state)
+├── temp/      (git-ignored intermediates)
+└── output/    (git-ignored generated files)
 ```
 
-## Cost Estimation
+## Cost Notes
 
-For 2 one-hour talks:
+Costs are tracked during execution and saved into processing state/history files.
 
-| Step | Cost |
-|------|------|
-| Whisper transcription | $0.72 (2 × $0.36) |
-| AI summaries | $0.30-0.70 |
-| Newsletter generation | $0.20-0.40 |
-| **Total** | **$1.20-1.80/month** |
-
-Actual costs are tracked in `context/processing_history.json`.
+Reference pricing constants in code:
+- Whisper: `$0.006/min` (see `tools/whisper_client.py`)
+- Claude / OpenAI / Gemini token pricing estimates (see `tools/ai_client.py`)
 
 ## Customization
 
-### Newsletter Template
-
-Edit `knowledge/newsletter_templates/template.md` to change the newsletter structure.
-
-### Tone and Style
-
-Edit `knowledge/newsletter_templates/tone_guidelines.md` to adjust the writing style.
-
-### AI Prompts
-
-- `knowledge/prompts/summary_prompt.md` - How talks are summarized
-- `knowledge/prompts/newsletter_prompt.md` - How the final newsletter is generated
+- Templates: `knowledge/newsletter_templates/*.md`
+- Prompts: `knowledge/prompts/*.md`
+- Example inputs: `knowledge/examples/*.json`
 
 ## Troubleshooting
 
-### "yt-dlp not installed"
+### `yt-dlp` not installed
 
 ```bash
 brew install yt-dlp
-# or
-pip install yt-dlp
 ```
 
-### "OPENAI_API_KEY not set"
+### Missing API keys
 
-Ensure your `.env` file exists and contains valid API keys.
+Ensure `.env` exists and required keys are set for the model/provider you are using.
 
-### "File too large for Whisper"
+### Whisper file too large
 
-Whisper API has a 25MB limit. For longer videos, the audio may exceed this. Consider:
-- Using lower quality audio extraction
-- Splitting audio (not yet implemented)
+Whisper API max file size is 25MB. If exceeded, reduce audio size or split audio before transcription.
 
-### Pipeline stuck or failing
-
-Check state and logs:
+### Pipeline stuck/failing
 
 ```bash
-# View current state
 cat context/current_processing.json
-
-# Reset and start fresh
 ./execution/orchestrator.sh --force-restart <urls>
 ```
 
-### Rate limiting
+### Rate limits
 
-The pipeline automatically retries with exponential backoff. If you hit persistent rate limits:
-- Wait a few minutes and retry
-- Check your API quota/billing
+The project retries transient failures with exponential backoff. If persistent:
+- wait and retry
+- verify provider quota/billing
 
 ## Architecture
 
-The system uses a three-layer architecture:
-
-1. **AGENTS.md** - Orchestrator defining routing logic and agent roles
-2. **directives/** - Declarative workflow descriptions (what to do)
-3. **execution/** - Implementation scripts (how to do it)
-
-This separation allows:
-- Non-developers to modify workflows via markdown
-- Easy addition of new steps or providers
-- Clear debugging paths
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test with real YouTube videos
-5. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details.
+- `AGENTS.md`: routing + responsibilities
+- `directives/`: operational workflows
+- `execution/`: implementation scripts
+- `tools/`: reusable clients/utilities
