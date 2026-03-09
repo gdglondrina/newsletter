@@ -73,7 +73,13 @@ python3 -c "import openai" 2>/dev/null || {
 echo -e "${GREEN}Configuration:${NC}"
 echo "  Project: $PROJECT_ROOT"
 echo "  Python: $(python3 --version)"
-echo "  Provider: $(grep AI_PROVIDER .env 2>/dev/null | cut -d= -f2 || echo 'claude (default)')"
+echo "  AI Model: $(grep '^AI_MODEL=' .env 2>/dev/null | cut -d= -f2 || echo 'gpt-4o (default)')"
+STT_MODEL=$(grep '^TRANSCRIPT_MODEL=' .env 2>/dev/null | cut -d= -f2 || echo 'whisper-1')
+if [ "$STT_MODEL" = "faster-whisper" ]; then
+    FW_SIZE=$(grep '^FASTER_WHISPER_SIZE=' .env 2>/dev/null | cut -d= -f2 || echo 'medium')
+    STT_MODEL="$STT_MODEL ($FW_SIZE)"
+fi
+echo "  STT Model: $STT_MODEL"
 echo ""
 
 # Run the pipeline

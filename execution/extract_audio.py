@@ -69,6 +69,7 @@ def extract_audio(video_urls: List[str], state: Dict[str, Any]) -> Dict[str, Any
                 'title': result.title,
                 'duration': result.duration,
                 'audio_path': result.audio_path,
+                'subtitle_path': result.subtitle_path,
                 'status': 'audio_extracted',
                 'costs': {}
             }

@@ -36,6 +36,7 @@ class DownloadResult:
     audio_path: str
     duration: float
     format: str
+    subtitle_path: Optional[str] = None
 
 
 class YouTubeDownloader:
@@ -138,6 +139,52 @@ class YouTubeDownloader:
         except FileNotFoundError:
             raise FatalError("yt-dlp not installed. Run: brew install yt-dlp")
 
+    def download_subtitles(self, url: str, video_id: str, language: str = 'pt') -> Optional[str]:
+        """
+        Try to download auto-generated or manual subtitles.
+
+        Args:
+            url: YouTube video URL
+            video_id: Video ID for output filename
+            language: Subtitle language code
+
+        Returns:
+            Path to subtitle file, or None if unavailable
+        """
+        sub_path = self.output_dir / f"{video_id}.{language}.vtt"
+
+        try:
+            result = subprocess.run(
+                [
+                    'yt-dlp',
+                    '--write-auto-subs',
+                    '--write-subs',
+                    '--sub-langs', f'{language}',
+                    '--sub-format', 'srt',
+                    '--skip-download',
+                    '-o', str(self.output_dir / f"{video_id}.%(ext)s"),
+                    '--no-playlist',
+                    '--no-warnings',
+                    url
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            # yt-dlp names auto subs as video_id.lang.vtt
+            possible = list(self.output_dir.glob(f"{video_id}.*{language}*.srt"))
+            if possible:
+                logger.info(f"Downloaded subtitles: {possible[0]}")
+                return str(possible[0])
+
+            logger.info(f"No subtitles available for {video_id} in '{language}'")
+            return None
+
+        except Exception as e:
+            logger.warning(f"Subtitle download failed (non-fatal): {e}")
+            return None
+
     @retry_with_backoff(max_retries=3, initial_delay=5.0)
     def download_audio(
         self,
@@ -204,12 +251,16 @@ class YouTubeDownloader:
 
             logger.info(f"Downloaded: {output_path}")
 
+            # Try to download subtitles
+            subtitle_path = self.download_subtitles(url, video_id)
+
             return DownloadResult(
                 video_id=video_id,
                 title=info.title,
                 audio_path=str(output_path),
                 duration=info.duration,
-                format=format
+                format=format,
+                subtitle_path=subtitle_path
             )
 
         except subprocess.TimeoutExpired:

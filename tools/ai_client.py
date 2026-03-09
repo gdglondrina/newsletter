@@ -1,5 +1,5 @@
 """
-AI client supporting Claude, GPT, and Gemini models.
+AI client supporting Claude, GPT, Gemini, and OpenRouter models.
 """
 
 import os
@@ -273,11 +273,87 @@ class GeminiProvider(BaseProvider):
             raise TransientError(f"Gemini error: {e}")
 
 
+class OpenRouterProvider(BaseProvider):
+    """OpenRouter API provider (OpenAI-compatible)."""
+
+    DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
+
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+        self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
+        if not self.api_key:
+            raise FatalError("OPENROUTER_API_KEY not set")
+
+        # Strip the "openrouter/" prefix to get the actual model ID
+        self.model = model or ""
+        if self.model.lower().startswith("openrouter/"):
+            self.model = self.model[len("openrouter/"):]
+
+        try:
+            from openai import OpenAI
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.DEFAULT_BASE_URL
+            )
+        except ImportError:
+            raise FatalError("openai package not installed")
+
+    def estimate_cost(self, input_tokens: int, output_tokens: int) -> float:
+        # OpenRouter returns cost info in the response; return 0 as placeholder
+        return 0.0
+
+    @retry_with_backoff(max_retries=3, initial_delay=2.0)
+    def generate(
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        max_tokens: int = 4096
+    ) -> GenerationResult:
+        try:
+            messages = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=max_tokens
+            )
+
+            text = response.choices[0].message.content
+            input_tokens = response.usage.prompt_tokens if response.usage else 0
+            output_tokens = response.usage.completion_tokens if response.usage else 0
+            cost = self.estimate_cost(input_tokens, output_tokens)
+
+            logger.info(f"openrouter/{self.model}: {input_tokens} in / {output_tokens} out")
+
+            return GenerationResult(
+                text=text,
+                model=f"openrouter/{self.model}",
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost=cost
+            )
+
+        except Exception as e:
+            self._handle_error(e)
+
+    def _handle_error(self, e: Exception):
+        error_str = str(e).lower()
+        if "rate limit" in error_str or "429" in error_str:
+            raise TransientError(f"OpenRouter rate limit: {e}")
+        elif "unauthorized" in error_str or "401" in error_str:
+            raise FatalError(f"Invalid OpenRouter API key: {e}")
+        else:
+            raise TransientError(f"OpenRouter error: {e}")
+
+
 class AIClient:
-    """AI client supporting Claude, GPT, and Gemini models."""
+    """AI client supporting Claude, GPT, Gemini, and OpenRouter models."""
 
     # Model prefix to implementation class mapping
     _IMPLEMENTATIONS = {
+        'openrouter/': OpenRouterProvider,
         'claude': ClaudeProvider,
         'gpt-': OpenAIProvider,
         'o1-': OpenAIProvider,
@@ -310,7 +386,7 @@ class AIClient:
         if not impl_class:
             raise FatalError(
                 f"Unknown model: {self.model}. "
-                f"Supported prefixes: claude, gpt-, o1-, o3-, gemini"
+                f"Supported prefixes: openrouter/, claude, gpt-, o1-, o3-, gemini"
             )
 
         self._impl = impl_class(api_key, self.model)
